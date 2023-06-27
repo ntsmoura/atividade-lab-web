@@ -1,11 +1,25 @@
 import { Actor, AllActions, Remove, Search, Toggle, Write, Add, TarefaActionsEnum, TarefasState } from "./types";
 
-export const makeInitialTarefaState = (): TarefasState => ({
-  tarefas: [],
-  error: "",
-  name: "",
-  search: "",
-});
+const updateStorage = (state: TarefasState) => {
+   localStorage.setItem("tasks", JSON.stringify(state.tarefas));
+}
+
+export const makeInitialTarefaState = (): TarefasState => {
+
+  const tasks = localStorage.getItem("tasks")
+  let tasksArray = []
+  if (tasks) {
+    tasksArray = JSON.parse(tasks)
+    tasksArray.map((task: any) => {task.createdAt = new Date(task.createdAt)})
+  }
+
+  return{
+    tarefas: [...tasksArray],
+    error: "",
+    name: "",
+    search: "",
+  }
+};
 
 export const removeTask: Actor<Remove> = (state, action) => {
   return {
@@ -15,12 +29,16 @@ export const removeTask: Actor<Remove> = (state, action) => {
 };
 
 export const toggleTask: Actor<Toggle> = (state, action) => {
-  return {
+  const updatedState = {
     ...state,
     tarefas: state.tarefas.map((t) =>
       t.id === action.payload.id ? { ...t, done: !t.done } : t
     ),
   };
+
+  updateStorage(updatedState);
+
+  return updatedState;
 };
 
 export const writeTask: Actor<Write> = (state, { payload }) => {
@@ -54,7 +72,7 @@ export const addTask: Actor<Add> = (state) => {
     return state;
   }
 
-  return {
+  const modifiedState = {
     ...state,
     tarefas: [
       ...state.tarefas,
@@ -68,6 +86,10 @@ export const addTask: Actor<Add> = (state) => {
     error: "",
     name: "",
   };
+
+  updateStorage(modifiedState)
+
+  return modifiedState
 };
 
 export const searchTask: Actor<Search> = (state, action) => {
